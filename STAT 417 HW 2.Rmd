@@ -1,0 +1,161 @@
+---
+title: "STAT 417 HW 2"
+author: "Brendan Jones"
+date: "September 26, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#4) 3.6.a
+
+library(TSA)
+load("~/R/win-library/3.5/TSA/data/beersales.rda")
+data(beersales)
+#beersales
+beerSaleDataTS <- ts(data = beersales, start = 1975, end = c(1990, 12), frequency = 12)
+plot(beerSaleDataTS, type = "b", main = "Monthly Beer Sales 1975-1990", col = "red", xlab = "Year", ylab = "Millions of Barrels")
+
+#Beer sales followed a sinusoidal annual pattern.
+#It seems to increase 1975-1982 but more or less flatline from theron.
+```
+
+```{r}
+#4) 3.6.b
+
+plot(beerSaleDataTS, type = "l", main = "Monthly Beer Sales 1975-1990", col = "red", xlab = "Year", ylab = "Millions of Barrels")
+points(y = beerSaleDataTS, x = time(beerSaleDataTS), pch = as.vector(season(beerSaleDataTS)), col = "blue")
+
+#The separate plotting symbols helped me see which months have low sales and which months have high sales numbers.
+#November-February usually have low sales whereas March-August usually have high sales.
+```
+
+```{r}
+#4) 3.6.c
+
+beerSaleModel = lm(beerSaleDataTS ~ harmonic(beerSaleDataTS))
+plot(ts(fitted(beerSaleModel), frequency = 12, start = c(1975, 1)), ylab = "Millions of Barrels", type = "l", ylim = range(c(fitted(beerSaleModel), beerSaleDataTS)), main = "Monthly Beer Sales With Cosine Trend", col = "red", xlab = "Year")
+points(beerSaleDataTS, col = "green")
+
+beerSaleModelResiduals <- beerSaleModel$residuals
+
+#The fact that the mean annual beer sales isn't roughly constant means this regression model isn't appropriate for the
+#data.
+#The data points in the first third mainly are below the regression line and points after mainly are above the
+#regression line.
+```
+
+```{r}
+#4)3.6.d
+
+plot(y = rstudent(beerSaleModel), x = as.vector(time(beerSaleDataTS)), xlab = "Month", ylab = "Standardized Residuals", type = 'l', main = "Monthly Beer Sales Time vs. Residuals", col = "blue")
+points(y = rstudent(beerSaleModel), x = as.vector(time(beerSaleDataTS)), pch = as.vector(season(beerSaleDataTS)), col = "green")
+
+#There is a clear pattern in the residuals. Early residuals tend to be lower than later resduals.
+#Also, it looks like residuals might vary based on month.
+```
+
+```{r}
+#4) 3.6.e
+
+beerSaleQuadModel <- lm(formula = beerSaleDataTS ~ time(beerSaleDataTS) + I(time(beerSaleDataTS)^2) + I(season(beerSaleDataTS)))
+
+plot(ts(fitted(beerSaleQuadModel), frequency = 12, start = c(1975, 1)), ylab = "Millions of Barrels", type = "l", ylim = range(c(fitted(beerSaleQuadModel), beerSaleDataTS)), main = "Monthly Beer Sales With Seasonal-Means + Quadratic Trend", col = "red", xlab = "Year")
+points(beerSaleDataTS, col = "dark blue")
+
+beerSaleQuadModelResiduals <- beerSaleQuadModel$residuals
+
+#This regression seems like a good fit to the data. There are some outliers, but mostly the data fits well with the
+#regression line.
+```
+
+```{r}
+#4) 3.6.f
+
+plot(y = beerSaleQuadModelResiduals, x = as.vector(time(beerSaleDataTS)), xlab = "Year", ylab = "Standardized Residuals", type = 'l', main = "Monthly Beer Sales Time vs. Residuals", col = "orange")
+points(y = beerSaleQuadModelResiduals, x = as.vector(time(beerSaleDataTS)), pch = as.vector(season(beerSaleDataTS)), col = "purple")
+
+#This residuals plot seems to indicate that the seasonal-means + quadratic trend is a good model for the data.
+#There is no glaringly obvious pattern.
+```
+
+```{r}
+#5) 3.9.a
+
+load("~/R/win-library/3.5/TSA/data/prescrip.rda")
+data(prescrip)
+prescriptionDataTS <- ts(data = prescrip, start = c(1986, 8), end = c(1992, 3), frequency = 12)
+plot(prescriptionDataTS, type = "l", main = "Monthly Prescription Costs 8/1986-3/1992", col = "red", xlab = "Year", ylab = "$ / Prescription Claim")
+points(y = prescriptionDataTS, x = time(prescriptionDataTS), pch = as.vector(season(prescriptionDataTS)), col = "navy")
+
+#The cost of prescriptions fairly steadily increased with a sinusoidal annual pattern either linearly or quadratically.
+```
+
+```{r}
+#5) 3.9.b
+
+plot((prescriptionDataTS / zlag(prescriptionDataTS) - 1) * 100, type = "l", main = "Monthly Prescription Costs Increase 8/1986-3/1992", col = "blue", xlab = "Year", ylab = "Prescription Claim Increase %")
+points(y = (prescriptionDataTS / zlag(prescriptionDataTS) - 1) * 100, x = time(prescriptionDataTS), pch = as.vector(season(prescriptionDataTS)), col = "orange")
+
+#A linear regression model seems like it might be appropriate because the percentage increase has a fairly constant
+#mean over time. It does seem to have some seasonality, though not strong seasonality.
+```
+
+```{r}
+#5) 3.9.c
+
+prescripIncreaseModel = lm((prescriptionDataTS / zlag(prescriptionDataTS) - 1) * 100 ~ harmonic((prescriptionDataTS / zlag(prescriptionDataTS) - 1) * 100))
+plot(ts(fitted(prescripIncreaseModel), frequency = 12, start = c(1986, 8)), ylab = "Prescription Claim Increase %", type = "l", ylim = range(c(-4, 6)), main = "Monthly Prescription Increase With Cosine Trend", col = "green", xlab = "Year")
+points((prescriptionDataTS / zlag(prescriptionDataTS) - 1) * 100, col = "brown")
+
+prescripIncreaseModelResiduals <- prescripIncreaseModel$residuals
+
+#Cosine looks like an an awful poor regression line because the points aren't close to the regression line.
+#The regression line is pretty useless.
+```
+
+```{r}
+#5) 3.9.d
+plot(y = prescripIncreaseModelResiduals, x = as.vector(time(prescriptionDataTS[2:length(prescriptionDataTS)])), xlab = "Year", ylab = "Standardized Residuals", type = 'l', main = "Monthly Prescription Increase Time vs. Residuals", col = "red")
+points(y = prescripIncreaseModelResiduals, x = as.vector(time(prescriptionDataTS[2:length(prescriptionDataTS)])), pch = as.vector(season(prescriptionDataTS))[2:length(prescriptionDataTS)], col = "green")
+
+#There is no easily discernable pattern, so cosine prbably is adequate.
+```
+
+```{r}
+#6) 3.15.a
+
+prescripIncreaseModelResiduals <- prescripIncreaseModel$residuals
+```
+
+```{r}
+#6) 3.15.b
+
+runs(prescripIncreaseModelResiduals)
+
+#Because of the very low p-value of 0.0026, I reject the null hypothesis that the stochastic component of this data is
+#normally distributed.
+```
+
+```{r}
+#6) 3.15.c
+
+acf(prescripIncreaseModelResiduals)
+
+#Lag 1 and Lag 13's autocorrelations exceed 2 standard errors below 0,so therefore I reject \rho(k) = 0.
+```
+
+```{r}
+#6) 3.15.d
+
+boxplot(prescripIncreaseModelResiduals, main = "Box Plot of Prescription Increase % Residuals", horizontal = TRUE)
+hist(prescripIncreaseModelResiduals, probability = TRUE, breaks = seq(-4, 4, 0.5), col = "lightblue", main = "Histogram of Prescription Increase % Residuals")
+qqnorm(prescripIncreaseModelResiduals, col = "blue")
+qqline(prescripIncreaseModelResiduals, col = "red")
+
+#These graphs show that the residuals aren't normal. The box plot has a slight skew to the left, the histogram
+#doesn't look particularly normal, and the normal probability plot shows skewness at the extremes.
+```

@@ -1,0 +1,266 @@
+---
+title: "STAT 433 Midterm Exam"
+author: "Brendan Jones"
+date: "October 25, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown
+
+##1)
+
+```{r}
+#Returns the f(x) of the normal distribution for the given x, mean, and standard deviation
+ftn <- function(x, mean, sd)
+{
+  return(dnorm(x, mean, sd))
+}
+
+#The main function
+int.norm <- function(mu, sigma)
+{
+  numDivisions <- 500#Number of trapezoids
+  a <- mu - sigma#Left hand boundary
+  b <- mu + sigma#Right hand boundary
+  h <- (b - a) / numDivisions#Width of each division
+  
+  xValues <- seq(a, b, by = h)#The x-coordinates of the trapezoid vertical edges
+  fValues <- ftn(xValues, mu, sigma)
+  
+  return(h * (fValues[1] / 2 + sum(fValues[2:numDivisions]) + fValues[numDivisions + 1] / 2))
+}
+
+int.norm(5, 7)
+
+int.norm(4, 8)
+
+int.norm(-2, 5)
+```
+
+##2)
+
+```{r}
+source("D:/R/win-library/3.5/spuRs/resources/scripts/simpson_n.r")
+phi <- function(x) return(exp(-x^2/2)/sqrt(2*pi))
+Phi <- function(z, mean = 0, sd = 1, p = 0.5)
+{
+  if (z < 0) {
+    return(0.5 - simpson_n(phi, (z - mean) / sd, 0) - p)#Modified to have the desired probability be 0
+  } else if (z == 0) {
+    return(0.5 - p)
+  } else {
+    return(0.5 + simpson_n(phi, 0, (z - mean) / sd) - p)#Modified to have the desired probability be 0
+  }
+}
+
+my.qnorm <- function(p, mean, sd)
+{
+  #Using secant method
+  
+  maxIter <- 100#Max number of iterations
+  tol = 1e-9#Tolerance
+  
+  #Iteration 1
+  if (p <= 0.5) {
+    xNMinus1 <- -2
+    xN <- -1
+  } else {
+    xNMinus1 <- 1
+    xN <- 2
+  }
+  currIter <- 1
+  
+  xNPlus1 <- xN - (Phi(xN, mean, sd, p) * (xN - xNMinus1) / (Phi(xN, mean, sd, p) - Phi(xNMinus1, mean, sd, p)))
+  
+  #All successive iterations
+  while (currIter < maxIter && abs(xNPlus1 - xN) > tol)
+  {
+    xNMinus1 <- xN
+    xN <- xNPlus1
+    currIter <- currIter + 1
+    
+    yXN <- Phi(xN, mean, sd, p)#F(Xn)
+    xNPlus1 <- xN - (yXN * (xN - xNMinus1) / (yXN - Phi(xNMinus1, mean, sd, p)))
+  }
+  
+  #Returns the root if the method converged, NULL if not
+  if (abs(xNPlus1 - xN) > tol)
+  {
+    cat("Algorithm failed to converge in ", maxIter, " iterations!\n")
+    return(NULL)
+  } else {
+    return(xNPlus1)
+  }
+}
+
+my.qnorm(0.75, 0, 2)
+qnorm(0.75, 0, 2)#For comparison
+
+my.qnorm(0.25, 0, 2)
+qnorm(0.25, 0, 2)#For comparison
+
+my.qnorm(0.75, 2, 5)
+qnorm(0.75, 2, 5)#For comparison
+
+my.qnorm(0.25, 2, 5)
+qnorm(0.25, 2, 5)#For comparison
+```
+
+##3
+
+###3.3)
+
+```{r}
+x <- c(3.9, 4.2, 5.4, 6.5, 7.0, 8.8, 9.2, 11.4, 14.3, 15.1, 15.3, 15.5, 17.9, 18.0, 19.0, 19.0, 23.9, 24.8, 26.0, 34.2, 9.7, 17.2, 4.6, 16.7, 21.3, 25.2, 29.5, 4.1, 20.1, 11.3)
+
+#Theta is (Beta, delta)
+logL <- function(theta,data)
+{
+  n <- length(data)#The number of elements in the data
+  sumLogx <- sum(log(data))#SUm of log(x_i)
+  beta <- theta[1]#Beta
+  delta <- theta[2]#Delta
+  sumXb <- sum(data^beta)#Sum of x_i^(delta - 1)
+  loglik <- n * log(beta) - n * beta * log(delta) - (1 / delta^beta) * sumXb + (beta - 1) * sumLogx  #log-likelihood function
+  return(-loglik)
+}
+
+optim(c(1,1), logL, data = x)
+```
+
+##4
+
+```{r}
+app.area <- function(n = 1000, r = 1)
+{
+  randXCoords <- runif(n, -r, r)#The n x-coordinates of the points randomly in [-r, r]
+  randYCoords <- runif(n, -r, r)#The n y-coordinates of the points randomly in [-r, r]
+  
+  numCoordsinCircle <- 0#Number of coords in the circle
+  coordDistance <- sqrt(randXCoords^2 + randYCoords^2)#Finds the distance of each coord from the origin
+  
+  for (i in 1:n)#Goes through each element in coordDistance and if in circle, increments numCoordsDistance
+    if (coordDistance[i] <= r)
+      numCoordsinCircle <- numCoordsinCircle + 1
+  
+  est <- (2*r)^2 * numCoordsinCircle / n#Estimate of the circle's area
+  true <- pi * r^2#Circle's actual area
+  error <- abs(est - true)#Absolute value of the error
+  
+  return(c(true, est, error))
+}
+
+app.area(100, 1)
+app.area(1000, 1)
+app.area(10000, 2)
+app.area(150000, 2.5)
+app.area(800000, 1)
+```
+
+##5)
+
+###5.2)
+
+```{r}
+#x should be an integer >= 0 and <= n
+#n should be an integer >= 0 and >= x
+binom.pmf <- function(x, n, p)
+{
+  x <- floor(x)#Converts x to integer if not already
+  n <- floor(n)#Converts n to integer if not already
+  
+  if (x == 0) {#The base case
+    return((1 - p)^n)
+  } else if (x > 0) {#The recursive case, recursively calls binom.pmf with with (x - 1, n, p)
+    return((n - x + 1) * p / (x * (1 - p)) * binom.pmf(x - 1, n, p))
+  } else {#In case n<0, should never get here
+    cat("Error: n negative: ", n, " !\n")
+    return(0)
+  }
+}
+
+binom.pmf(3, 10, 0.2)
+dbinom(3, 10, 0.2)#For comparison
+
+binom.pmf(15, 22, 0.7)
+dbinom(15, 22, 0.7)#For comparison
+
+binom.pmf(8, 12, 0.9)
+dbinom(8, 12, 0.9)#For comparison
+
+binom.pmf(4, 15, 0.5)
+binom.pmf(4, 15, 0.5)#For comparison
+```
+
+##6)
+
+```{r}
+CImu <- function(x, alpha)
+{
+  xMean <- mean(x)#The mean of the data
+  n <- length(x)#The number of elements in the data
+  t <- qt(1 - alpha / 2, n - 1)#Positive t_{a/2, df}
+  sd <- sd(x)#The standard deviation of the data
+  
+  return(c(xMean - t * sd / sqrt(n), xMean + t * sd / sqrt(n)))#Returns the 2 CIs
+}
+
+x <- c(7.09, -0.72, 1.26, -0.01, -0.60, -0.23 ,6.65, 3.01, -0.14, 2.91)
+
+CImu(x, 0.1)#90% CI
+CImu(x, 0.05)#95% CI
+CImu(x, 0.01)#99% CI
+```
+
+##7
+
+###7.1)
+
+```{r}
+library(spuRs)
+
+newtonRaphsonFtn <- function(x)
+{
+  return(c(x + x^3 - 4, 1 + 3 * x^2))
+}
+
+newtonraphson(newtonRaphsonFtn, -10)
+
+newtonraphson(newtonRaphsonFtn, 0)
+
+newtonraphson(newtonRaphsonFtn, 10)
+```
+
+All three starting values converged at 1.378797, which is the only root of $f(x)=x+x^3-4$.
+The closer the starting value was to the actual value, the less iterations the method took.
+x0 = 0, the closest to the root, took 8 iterations. x0 = 10, the second closest to the root, took 9
+iterations, the second fewest, and x0 = -10, the furthest from the root, took 10 iterations, the most.
+
+###5.2)
+
+```{r}
+library(spuRs)
+
+newtonRaphsonFtn2 <- function(x)
+{
+  fiftyx <- 50 * x
+  twentyx <- 20 * x
+  theReturn <- c( (cos(fiftyx) + sin(twentyx))^2,  2 * (cos(fiftyx) + sin(twentyx)) * (20 * cos(twentyx) - 50 * sin(fiftyx)) )
+  return(theReturn)
+}
+
+newtonraphson(newtonRaphsonFtn2, 0.25)
+
+newtonraphson(newtonRaphsonFtn2, 0.379)
+
+newtonraphson(newtonRaphsonFtn2, 0.75)
+```
+
+Looking at the graph of $g(x)=(cos(50x)+sin(20x))^2$, g(x) is very jaggedy and is near 0 many times.
+This would seem to explain the reason why the method sometimes found roots far away from x0.
+The method did each time find a root of the equation, but the initial iteration sometimes took the function to a root that
+wasn't the nearest root to x0 (with x0 = 0.379 and x0 = 0.75).

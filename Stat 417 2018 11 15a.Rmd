@@ -1,0 +1,136 @@
+---
+title: "Stat41720181113b"
+author: "NKN"
+date: "November 13, 2018"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(TSA)
+library(MASS)   # needed for generating the initial values 
+```
+
+<!-- ## Chapter 9 Forecasting -->
+
+## Time Series Regression 
+
+### Example  (log beer sales)
+
+Monthly supply of beer (in Ml) in Australia over the period January 1958 to December 1990. 
+
+(Source: Australian Bureau of Statistics; Cowpertwaite and Metcalfe)
+
+```{r}
+cbe <- read.delim("cbe.txt")
+beer.ts <- ts(cbe[,2],start=1958,freq=12)
+lbeer <- log(beer.ts)
+par(mfrow=c(1,1))
+plot(stl(lbeer,s.window="periodic"))
+```
+
+## Time series regression estimation (using OLS)
+
+### Fitting a quadratic trend
+
+
+```{r, echo=TRUE}
+t<-seq(1958,1991,length=length(lbeer))
+t2<-t^2
+quad.fit <- lm(lbeer~t+t2)
+summary(quad.fit)
+par(mfrow=c(1,1))
+plot(lbeer)
+lines(t, quad.fit$fit,col=2,lwd=2)
+```
+
+
+
+## A model that includes terms to capture the seasonality
+
+$$
+Y_t = \beta_0+\beta_1 t + \beta_2 t^2 + 
+\beta_3 sin(2\pi t) + \beta_4 cos(2 \pi t) +X_t \\
+\mbox{ where } $X_t$ \mbox{is a white noise process}
+$$
+
+```{r}
+sin.t<-sin(2*pi*t)
+cos.t<-cos(2*pi*t)
+plot(lbeer)
+seas.fit <- lm(lbeer~t+t2+sin.t+cos.t)
+summary(seas.fit)
+lines(t, seas.fit$fit,col=2)
+```
+
+
+## Residual diagnostics
+
+```{r}
+resid1 <- quad.fit$residuals
+par(mfcol=c(2,2))
+hist(resid1,prob=T)
+ts.plot(resid1)
+acf(resid1)
+pacf(resid1)
+```
+
+
+```{r}
+resid2 <- seas.fit$residuals
+par(mfcol=c(2,2))
+hist(resid2,prob=T)
+ts.plot(resid2)
+acf(resid2)
+pacf(resid2)
+```
+
+## Forecasting in Time Series Regression
+
+For future values of $t$, forecast based on the quadratic trend model is given by
+
+$$
+\hat{Y}_t = \hat{\beta}_0 + \hat{\beta}_1 t + \hat{\beta}_1 t^2 
+$$
+
+OR
+
+$$
+Y_t = \hat{\beta}_0+\hat{\beta}_1 t + \hat{\beta}_2 t^2 + 
+\hat{\beta}_3 sin(2\pi t) + \hat{\beta}_4 cos(2 \pi t) +X_t \\
+\mbox{ where } $X_t$ \mbox{is a white noise process}
+$$
+
+In R we can use a function called \texttt{predict()} to get SE's for forecast errors and forecast intervals. 
+
+## Forecasting in Time Series Regression
+
+To use the \texttt{predict()} function, we need to create a 
+\texttt{data.frame} containing the data for estimation (training)
+and aumgment it with the future data points for prediction (test)
+
+```{r}
+dat<- data.frame(cbind(lbeer, t, t2, sin.t,cos.t))
+colnames(dat) <- c("lbeer", "t", "t2", "sin.t", "cos.t")
+seas.fit <- lm(lbeer~t+t2+sin.t+cos.t,data=dat)
+summary(seas.fit)
+plot(lbeer)
+lines(t, seas.fit$fit,col=2)
+```
+
+The above is just a repeat of the previous steps. Now we will create data.frame with the new data points at which we need forecasts. 
+
+We will now hold the last one year's data out and predict them based on all the past data. 
+
+```{r}
+dat0 <- dat[-(364:396),]
+dat1 <- dat[(364:396),]
+fit <- lm(lbeer~t+t2+sin.t+cos.t,data=dat0)
+predict(fit,dat1,interval=c("prediction"))
+```
+

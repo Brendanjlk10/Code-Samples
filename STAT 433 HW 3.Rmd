@@ -1,0 +1,169 @@
+---
+title: "STAT 433 HW 3"
+author: "Brendan Jones"
+date: "September 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#1) 5.7.1
+
+euclidianLength <- function(v)
+{
+  sum <- 0#Initialize sum to 0
+  for (a in v)#Progresses through each num in the vector
+    sum <- sum + a^2#Adds the square of the num to sum
+  return(sqrt(sum))#Returns the square root of the sum
+}
+
+vector <- c(12, 3, 4, 9, -3, -5, 7, 0, -2, 1, 4)#The vector
+euclidianLength(vector)#Calls euclidian length
+```
+
+```{r}
+#2) 5.7.2
+
+geometricSeries <- function(x,n=0)
+{
+  sum <- 0#Intitializes sum to 0
+  for (i in 0:n)#Progresses through each num 0-n
+    sum <- sum + x^i#Adds x^i to sum
+  return(sum)
+}
+x <- 2.5#The base x
+n <- 9#N, the number of iterations
+geometricSeries(x, n)
+```
+
+```{r}
+#3) 5.7.4
+#The problem with this program is that when n < 10, x[(n + 1):10] stay at 100, resulting in sum(x) being
+#(10 - n) hundred greater than expected.
+#There are several ways to fix it, though here's the one I prefer:
+random.sum <- function(n)
+{
+  x <- ceiling(runif(n, max = 10))#Generates a vector of n random numbers from 0-10, rounded up
+  cat("x: ", x, "\n")#Prints out x in easy to see fashion
+  return(sum(x))#Returns the sum of x
+}
+
+show(random.sum(10))
+show(random.sum(5))
+```
+
+```{r}
+#4) 5.7.7
+
+#An awfully inefficient way to find n!/(r!*(n-r)!) by using recursion
+nChooseR <- function(n, r)
+{
+  if (n < r)#n should always be >= r, returns 0 if function called improperly
+  {
+    print("Unexpected: n < r")
+    return(0)
+  } else if (n == r | r == 0)#The 2 base conditions: n == r and r == 0. If true, returns 1 and ends recursion
+  {
+    return(1)
+  } else {
+    return(nChooseR(n - 1, r - 1) + nChooseR(n - 1, r))#Uses recursion to get (n - 1, r - 1) & (n - 1, r) & sums them
+  }
+}
+
+nChooseR(10, 4)
+
+```
+
+```{r}
+#5) 6.5.1
+#5a) 6.5.1.a
+
+ufc <- read.csv("~/R/win-library/3.5/spuRs/resources/data/ufc.csv")
+ufcHeight <- ufc[order(ufc$height.m, decreasing = TRUE), 1:5]
+head(ufcHeight)
+
+#Species of 3 tallest trees: 1. GF, WL, and DF
+```
+
+```{r}
+#5a) 6.5.1.a (cont.)
+
+ufcDiameter <- ufc[order(ufc$dbh.cm, decreasing = TRUE), 1:5]
+head(ufcDiameter)
+
+#Species of five widest trees: WC, DF, and GF
+```
+
+```{r}
+#5b) 6.5.1.b
+
+tapply(ufc$dbh.cm, ufc$species, mean)
+
+#Mean by Species:
+#DF: 39.9
+#GF: 35.2
+#WC: 38.4
+#WL: 33.7
+```
+
+```{r}
+#5c) 6.5.1.c
+tapply(ufc$dbh.cm, ufc$species, summary)
+
+#The 2 species with largest 3rd Quartile diameters: DF and WC
+```
+
+```{r}
+#5d) 6.5.1.d
+
+tapply(ufc$height.m / ufc$dbh.cm, ufc$species, median)
+
+#2 species with largest median slenderness: WL and GF
+#2 species with smallest median slenderness: WC and DF
+```
+
+```{r}
+#5e) 6.5.1.e
+
+tapply(ufc$dbh.cm, ufc$species, mean)
+ufcDF <- ufc[which(ufc$species == "DF"), 1:5]
+head(ufcDF[order(ufcDF$height.m, decreasing = TRUE), 1:5])
+
+#Tree 141 was the tallest tree of DF which is the species with the fattest trees on average
+```
+
+```{r}
+#6) 6.5.4
+
+pascalTriangle <- function(oldPascal)#Takes in a pascal triangle of any depth
+{
+  oldN <- length(oldPascal)#The depth of the old pascal triangle
+  newN <- oldN + 1#The depth of the new pascal triangle
+  oldRowN <- oldPascal[[length(oldPascal)]]#The bottom row of the old pascal
+  
+  newRowN <- c()#The vector of the new row
+  for (i in 1:newN)#Progress through each element of row
+  {
+    if (i == 1 | i == newN)#If on an edge of the triange, set equal to 1
+    {
+      newRowN <- append(newRowN, 1)
+    } else {#Otherwise, set to sum of appropriate elements of old row
+      newRowN <- append(newRowN, oldRowN[i - 1] + oldRowN[i])
+    }
+  }
+  oldPascal[[newN]] <- newRowN#Adds the new row to the old pascal triangle
+  return(oldPascal)#Returns the new pascal
+}
+
+#Creating a Pascal Triangle of depth 10
+aPascal <- list(1)
+for (i in 2:10)
+  aPascal <- pascalTriangle(aPascal)
+
+pascalTriangle(aPascal)#Add row 11 to pascal
+```

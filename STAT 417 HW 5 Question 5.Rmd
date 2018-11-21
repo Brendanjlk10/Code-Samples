@@ -1,0 +1,38 @@
+---
+title: "STAT 417 HW 5 Question 5"
+author: "Brendan Jones"
+date: "November 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown
+
+##5
+
+```{r}
+###5a)
+library(TSA)
+data("airpass")
+Yt <- airpass
+ts.plot(Yt, xlab = "Year", ylab = "Airline Passengers (1000s)")
+
+#The data seems to display a seasonal pattern and increases probably quadratically or exponentially.
+
+###5b)
+logYt <- log(Yt)
+ts.plot(logYt, xlab = "Year", ylab = "log(Airline Passengers (1000s))")
+
+#Taking the natural log seems to haave made the plot be closer to a straight line, but the line
+#still isn't straight. Probably has a square root or logarithmic curve now.
+
+ts.plot(diff(Yt) / Yt[1:(length(Yt) - 1)], xlab = "Year", ylab ="Yt fractional difference")
+ts.plot(diff(logYt) / logYt[1:(length(logYt) - 1)], xlab = "Year", ylab = "log(Yt) fractional difference")
+
+#For smaller x values, log(Yt) fractional difference has slightly bigger variance, though with large x values,
+#Yt's fractional difference has slightly bigger variance.
+```
+

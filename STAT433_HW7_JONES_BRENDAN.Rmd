@@ -1,0 +1,137 @@
+---
+title: "STAT433_HW7_JONES_BRENDAN"
+author: "Brendan Jones"
+date: "October 19, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+##1)
+$$
+  X=8\\
+  \lambda=3*5=15\\
+  P(X=8) = \frac{e^{-15}*15^8}{8!}=0.01944
+$$
+```{r}
+dpois(8, 15)
+```
+
+##2)
+```{r}
+binom.pois <- function(x,n,p)
+{
+  binom.prob <- dbinom(x, n, p)
+  poisapp.prob <- dpois(x, n * p)
+  
+  return(c(binom.prob,poisapp.prob))
+}
+
+binom.pois(48, 500, 0.1)
+
+```
+
+##3) 16.7.2
+
+$$
+  n=10\\
+  p=0.2\\
+  P(X\geq3)=1-P(x\leq2)
+$$
+
+
+```{r}
+1 - pbinom(2, 10, 0.2)
+```
+
+##4) 16.7.5
+###(a)
+
+$$
+  p=0.5\\
+  y=\text{Number of boys}\\
+  N = 0.5^{y+1}\\
+  E(N) = \frac{1 - 0.5}{0.5}+1 = 1+1=2\\
+  Var(Y) = \frac{1 - 0.5}{0.5^2}=2
+$$
+
+###(b)
+
+$$
+\begin{align*}
+N&=1:\;0.5^{0+1}=0.5\\
+N&=2:\;0.5^{1+1}=0.25\\
+N&=3:\;0.5^{2+1}=0.125
+\end{align*}
+$$
+
+##5) 7.6.13
+
+###(a)
+
+```{r}
+1 - pexp(10, 1/100)
+```
+
+###(b)
+
+```{r}
+1 - pexp(100, 1/100)
+```
+
+###(c)
+```{r}
+(1 - pexp(100, 1/100)) / (1 - pexp(90, 1/100))
+```
+
+$P(X > 100 | X > 90) = P(X>10)$ because the exponential distribution is memoryless because the transistor has a constant failure rate. The transistor is equally likely to fail in any given 10 hour interval as any other 10 hour interval
+
+
+##6) 7.6.16
+###(a)
+$$
+f_Y=1+x^2\\
+F_Y = \int(1+x^2)\,\mathrm{d}x=x+\frac{1}{3}x^3
+$$
+
+###(b)
+$$
+EY = \int_0^1 y*f_Y(y)\,\mathrm{d}y = \int_0^1 (1+x^2)(x+\frac{1}{3}x^3)\,\mathrm{d}x = \int_0^1(\frac{1}{3}x^5+\frac{4}{3}x^3+x)\,\mathrm{d}x=\frac{1}{3}+\frac{4}{3}+1=\frac{8}{3}
+$$
+
+###(c)
+```{r}
+n <- 10000
+u <- runif(n)
+x <- 1 + u^2
+hist(x, freq = FALSE)
+x2 <- seq(0, 1, 0.01)
+lines(x2 + 1, 1 + x2^2, col = "red")
+```
+
+##7)
+###(a)
+
+$$
+\text{shape}=\beta=2\\
+\text{scale} = \delta=10\\
+P(X\geq 20) = 1 - P(X \leq 20)
+$$
+
+```{r}
+1 - pweibull(20, 2, 10)
+```
+
+###(b)
+
+$$
+P(X\geq20\,|\,X\geq10)
+$$
+
+```{r}
+(1 - pweibull(20, 2, 10)) / (1 - pweibull(10, 2, 10))
+```

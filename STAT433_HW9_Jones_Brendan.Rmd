@@ -1,0 +1,98 @@
+---
+title: "STAT433_HW9_Jones_Brendan"
+author: "Brendan Jones"
+date: "November 13, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##1.
+
+```{r}
+n <- 10000
+x <- runif(n, 0, pi / 3)
+
+pi / 3 * mean(sin(x))#Monte Carlo
+-cos(pi / 3) - (-cos(0))#Exact
+```
+
+##2.
+
+```{r}
+iter <- 1000
+n <- 10000
+sampleMCs <- c()
+
+for (i in 1:iter)
+{
+  x <- runif(n, 0, 0.5)
+  sampleMCs <- c(sampleMCs, 0.5 * mean(exp(-x)))
+}
+
+mean(sampleMCs)#Estimate of theta hat
+var(sampleMCs)#Estimate of the variance of theta hat
+```
+
+##3.
+
+$$
+h_1(x) = 4x^2\\
+F(x) = \int_0^x {4x^2}\,dx = \frac{4}{3}x^3 \implies x=\sqrt[3]{0.75y}\\
+h_2(x) = 2.5x\\
+F(x) = \int_0^x {2.5x}\,dx = 1.25x^2 \implies x=\sqrt{0.8y}
+$$
+
+```{r}
+n <- 10000
+g <- function(x) return(sqrt(1 - x^2))
+h1 <- function(x) return(4 * x^2)
+h2 <- function(x) return(2.5 * x)
+
+iter <- 1000
+simu <- matrix(0, iter, 2)
+
+for (i in 1:iter)
+{
+	u <- runif(n)
+	x <- (0.75*u)^(1/3)
+	u <- runif(n)
+	y <- sqrt(0.8 * u)
+	
+	simu[i,] <- c(mean(g(x) / h1(x)), mean(g(y) / h2(y)))
+}
+
+apply(simu, 2, mean)
+apply(simu, 2, sd)
+```
+
+They both produce about the actual value of 0.785398.
+Though, $f(x)=4x^2$ has significantly greater variance than $f(x)=2.5x$
+
+##4.
+
+$$
+h_1(x) = 150x^2\\
+F(x) = \int_1^x {150x^2}\,dx = 50x^3 - 50 \implies x=\sqrt[3]{0.02y+1}
+$$
+
+```{r}
+n <- 100000
+g <- function(x) return(x^2 * exp(-0.5 * x^2) / sqrt(2 * pi))
+h <- function(x) return(150 * x^2)
+
+iter <- 1000
+simu <- matrix(0, iter, 1)
+
+for (i in 1:iter)
+{
+	u <- runif(n, min = 1, max = 10000)
+	x <- (0.02*u + 1)^(1/3)
+	
+	simu[i] <- (10000 - 1) * mean(g(x) / h(x))
+}
+
+apply(simu, 2, mean)
+```

@@ -1,0 +1,127 @@
+---
+title: "STAT 417 Classwork 11"
+author: "Brendan Jones"
+date: "November 8, 2018"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(TSA)
+library(MASS)   # needed for generating the initial values 
+```
+
+## Classwork 11 
+
+## Generating data from an AR(2) Process with a given set of roots of its characteristic polynomial
+
+Recall for an AR(2) model given by
+
+
+$$
+Y_t = \phi_1 Y_{t-1} + \phi_2 Y_{t-2}+ e_t
+$$
+
+the characteristic polynomial is
+
+$$ 
+1-\phi_1 x - \phi_2 x^2 = 0
+$$
+
+If $m_1$ and $m_2$ are its roots, we should have 
+
+$$
+(1-\frac{1}{m_1}x)(1-\frac{1}{m_2}x)=1-\phi_1 x - \phi_2 x^2
+$$
+
+That means:
+
+$$
+(1-\left( \frac{1}{m_1}+\frac{1}{m_2} \right) x + \frac{1}{m_1} \frac{1}{m_2}x^2) = 1-\phi_1 x - \phi_2 x^2
+$$
+
+We have 
+$m_1=2$ and $m_2=1.25$, so that 
+
+$\phi_1=(0.5+0.8)=1.3$ and $\phi_2=-(0.5)(0.8)=-0.4$.
+
+Verifying that the calculations are correct:
+
+
+```{r}
+# finding the roots of the ch. poly. 
+polyroot(c(1,-1.3,0.4))
+```
+
+## Obtaining theoretical ACF in R
+
+Now we use 
+
+$\texttt{ARMAacf(ar=c(1.3,-0.4), lag.max=2)}$ 
+
+to get the theoretical auto-correlations. 
+
+Warning: 
+The roots of the characteristic equation are greater than one in absolute value before using these functions. They are not valid otherwise. 
+
+```{r}
+th.acf <- ARMAacf(ar=c(1.3,-0.4), lag.max=40)
+plot(0:40,th.acf,xlab="lag",ylab="theoretical ACF",ylim=c(-1,1),col='red')
+abline(h=0)
+x0 <- seq(0,40,1)
+y0 <- rep(0,41)
+x1 <- seq(0,40,1)
+y1 <- th.acf
+segments(x0,y0,x1,y1,col='blue')
+```
+
+
+## The four steps involved in generating data from AR(2) for given values for $\phi_1$, $\phi_2$ and $\sigma^2_e$. 
+
+
+(b)  Compute the values of $\rho_1$, $\rho_2$
+```{r}
+th.acf <- ARMAacf(ar=c(1.3,-0.4), lag.max=6)
+th.acf
+```
+
+
+Note that these quantities can be obtained using the $\texttt{ARIMAacf()}$ function as well:
+
+```{r}
+phi1 <- 1.3
+phi2 <- -0.4
+gamma0 <- 5
+#sigma2.e <- 2
+th.acf <- ARMAacf(ar=c(phi1,phi2), lag.max=6)
+sigma2.e <- gamma0*(1- phi1*th.acf[2] - phi2*th.acf[3])
+sigma2.e
+```
+
+
+## The four steps involved in generating data from AR(2) for given values for $\phi_1$, $\phi_2$ and $\sigma^2_e$. 
+
+
+
+Approach 4: Using approach 2 (that is, using the R function $\texttt{ARIMA.sim()}$) to generate a (very) long series and then grabbing the last n values as our sample. 
+
+
+```{r}
+n <- 120; phi1 <- 1.3; phi2 <- -0.4; 
+sigma.e <- sqrt(0.5785714)
+set.seed(123456)
+Yt <- arima.sim(10000 + n, model = list(ar = c(1.3, -0.4)), sd = sigma.e)
+ts.plot(Yt[10001:(10000 + n)])
+title("ts.plot for AR(2) with phi1=0.5, phi2=-0.9")
+stats::acf(Yt, plot = TRUE, lag.max = 14, ylim = c(-1, 1))
+points(0:14, th.acf[1:15],col = 'red', pch = 16)
+title("acf.plot for AR(2) with phi1=0.5, phi2=-0.9")
+
+arima(th.acf)
+```
+

@@ -1,0 +1,398 @@
+---
+title: "STAT 417 HW 6"
+author: "Brendan Jones"
+date: "November 14, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1
+##6.27
+###6.27 (a)
+
+```{r}
+phi1 <- 0.7
+phi2 <- -0.4
+n <- 72
+etVar <- 4#Variance of et
+
+et <- sqrt(etVar) * rnorm(n+2)
+ar2 <- c(0, 0)
+
+for (i in 1:n)
+{
+  ar2 <- c(ar2, phi2 * ar2[i] + phi1 * ar2[i + 1] + et[i + 2])
+}
+
+ar2 <- ar2[3:(n+2)]
+YtAr2 <- ts(ar2, start = 1, end = n)
+
+ts.plot(YtAr2)
+
+maxLag <- 10
+th.acfAR2 <- ARMAacf(ar = c(phi1, phi2), lag.max = maxLag)
+plot(0:maxLag, th.acfAR2, xlab = "lag", ylab = "theoretical ACF", ylim = c(-1,1), col = 'red')
+abline(h = 0)
+x0 <- seq(0, maxLag, 1)
+y0 <- rep(0, maxLag + 1)
+x1 <- seq(0, maxLag, 1)
+y1 <- th.acfAR2
+segments(x0, y0, x1, y1, col = 'blue')
+
+th.acfAR2
+```
+
+###6.27 (b)
+
+```{r}
+stats::acf(YtAr2, plot = TRUE, lag.max = maxLag, ylim=c(-1,1))
+points(0:maxLag, th.acfAR2[1:(maxLag + 1)], col = 'red', pch=16, cex=0.5)
+title("Acf plot for AR(2), phi1=0.7, phi2=-0.4")
+stats::acf(YtAr2, plot = FALSE, lag.max = maxLag)
+```
+
+The sample ACF is fairly close to the theoretical ACF.
+
+###6.27 (c)
+
+```{r}
+pacf(th.acfAR2, lag.max = maxLag)
+```
+
+###6.27 (d)
+
+See (b).
+
+###6.27 (e)
+
+```{r}
+pacf(YtAr2, lag.max = maxLag, ylim = c(-1, 1))
+```
+
+The sample pacf is similar to the theoretical pacf.
+
+##6.28
+###6.28 (a)
+
+```{r}
+theta1 <- 0.7
+theta2 <- -0.4
+n <- 36
+etVar <- 4#Variance of et
+
+et <- sqrt(etVar) * rnorm(n + 2)
+ma2 <- c(0, 0)
+
+for (i in 1:n)
+{
+  ma2 <- c(ma2, -phi2 * et[i] - phi1 * et[i + 1] + et[i + 2])
+}
+
+ma2 <- ma2[3:(n + 2)]
+YtMa2 <- ts(ma2, start = 1, end = n)
+
+ts.plot(YtMa2)
+
+maxLag <- 5
+th.acfMA2 <- ARMAacf(ma = c(-phi1, -phi2), lag.max = maxLag)
+plot(0:maxLag, th.acfMA2, xlab = "lag", ylab = "theoretical ACF", ylim = c(-1,1), col = 'red')
+abline(h = 0)
+x0 <- seq(0, maxLag, 1)
+y0 <- rep(0, maxLag + 1)
+x1 <- seq(0, maxLag, 1)
+y1 <- th.acfMA2
+segments(x0, y0, x1, y1, col = 'blue')
+
+th.acfMA2
+```
+
+###6.28 (b)
+
+```{r}
+stats::acf(YtMa2, plot = TRUE, lag.max = maxLag, ylim = c(-1,1))
+points(0:maxLag, th.acfMA2[1:(maxLag + 1)], col = 'red', pch = 16, cex = 0.5)
+title("Acf plot for MA(2), phi1=0.7, phi2=-0.4")
+stats::acf(YtMa2, plot = FALSE, lag.max = maxLag)
+```
+
+The sample ACF is highly similar to the theoretical ACF.
+
+###6.28 (c)
+
+```{r}
+theta1 <- 0.7
+theta2 <- -0.4
+n <- 1000
+etVar <- 4#Variance of et
+
+et <- sqrt(etVar) * rnorm(n + 2)
+ma2b <- c(0, 0)
+
+for (i in 1:n)
+{
+  ma2b <- c(ma2b, -phi2 * et[i] - phi1 * et[i + 1] + et[i + 2])
+}
+
+ma2b <- ma2b[3:(n + 2)]
+YtMa2b <- ts(ma2b, start = 1, end = n)
+
+pacf(YtMa2b, lag.max = 20, ylim = c(-1, 1))
+```
+
+###6.28 (d)
+
+```{r}
+pacf(YtMa2, lag.max = 20, ylim = c(-1, 1))
+pacf(YtMa2, lag.max = 20, plot = FALSE)
+```
+
+The sample PACF matches the theoretical PACF Well.
+
+#2
+
+##7.28
+
+###7.28 (a)
+
+```{r}
+library(TSA)
+data("deere3")
+deereYt <- deere3
+#ts.plot(deerYt)
+ar(deereYt, order.max = 1, aic = F, method = 'yw')
+cat("\nSE of theta hat = ", sqrt((1 - 0.5306^2) / 57), "\n")
+ar(deereYt, order.max = 1, aic = F, method = 'ols')
+cat("\nSE of theta hat = ", sqrt((1 - 0.5332^2) / 57), "\n")
+ar(deereYt, order.max = 1, aic = F, method = 'mle')
+cat("\nSE of theta hat = ", sqrt((1 - 0.5256^2) / 57), "\n")
+```
+
+###7.28 (b)
+
+```{r}
+ar(deereYt, order.max = 2, aic = F, method = 'yw')
+cat("\nSE of theta hat = ", sqrt((1 - 0.0032^2) / 57), "\n")
+ar(deereYt, order.max = 2, aic = F, method = 'ols')
+cat("\nSE of theta hat = ", sqrt((1 - 0.0079^2) / 57), "\n")
+ar(deereYt, order.max = 2, aic = F, method = 'mle')
+cat("\nSE of theta hat = ", sqrt((1 - 0.0055^2) / 57), "\n")
+```
+
+The standard errors for AR(2) are slightly bigger than the standard errors for AR(1).
+Though, both AR(1) and AR(2) seem to be reasonable models.
+
+##7.30
+###7.30 (a)
+
+```{r}
+library(TSA)
+data("days")
+daysYt <- days
+ts.plot(daysYt)
+daysYt
+daysYt[63] <- 35
+daysYt[106] <- 35
+daysYt[129] <- 35
+ts.plot(daysYt)
+```
+
+```{r}
+arima(daysYt, order = c(0, 0, 2), method = 'CSS')
+arima(daysYt, order = c(0, 0, 2), method = 'ML')
+```
+
+###7.30 (b)
+```{r}
+arima(daysYt, order = c(0, 0, 5), method = 'CSS')
+arima(daysYt, order = c(0, 0, 5), method = 'ML')
+```
+
+The standard error for each theta is slightly bigger for MA(5) than MA(2).
+
+#3 8.7
+##8.7 (a)
+
+```{r}
+library(TSA)
+data("hare")
+hareYt <- hare
+ar3Hare <- arima(sqrt(hareYt), order = c(3, 0, 0), method = 'ML')
+ar3Hare
+
+ts.plot(residuals(ar3Hare))
+acf(residuals(ar3Hare))
+```
+
+All of the ACFs are within 3 standard deviations of 0.
+The graph does not show statistically significant evidence of nonzero autocorrelation in the residuals.
+
+##8.7 (b)
+
+```{r}
+signif(acf(residuals(ar3Hare), plot = F)$acf[1:9], 3)
+
+tsdiag(ar3Hare, gof = 15, omit.initial = FALSE)
+
+qstar <- 31 * (31 + 2) * ((0.0126)^2 / (31 - 1) + (0.123)^2 / (31 - 2) + (0.00102)^2 / (31 - 3) + (-0.155)^2 / (31 - 4) + (0.332)^2 / (31 - 5) + (0.00573)^2 / (31 - 6) + (0.0784)^2 / (31 - 7) + (-0.0535)^2 / (31 - 8) + (0.0423)^2 / (31 - 9))
+qstar
+
+pchisq(qstar, 8, lower.tail = FALSE)
+```
+
+This p-value of 0.618 supports the AR(3) specification.
+
+##8.7 (c)
+
+```{r}
+runs(residuals(ar3Hare))
+```
+
+With the p-value of 0.602, I fail to reject the null hypothesis. This supports the AR(3) specification.
+
+##8.7(d)
+
+```{r}
+qqnorm(residuals(ar3Hare))
+qqline(residuals(ar3Hare))
+```
+
+The residuals don't seem to be normally distributed. There appears to be a curve in the Normal Q-Q Plot.
+
+##8.7(e)
+
+```{r}
+shapiro.test(residuals(ar3Hare))
+```
+
+At a p-value of 0.06046, your conclusion depends on your chosen $\alpha$. At $\alpha=0.05$, we fail to reject normality of the residuals.
+Though, at $\alpha = 0.10$, we reject normality of the residuals.
+
+#4 8.10
+
+```{r}
+ar1Deere <- arima(deereYt, order = c(1, 0, 0), method = 'ML')
+ar1Deere
+
+ts.plot(residuals(ar1Deere))
+acf(residuals(ar1Deere))
+```
+
+The ACF plot supports the AR(1) specification.
+
+```{r}
+tsdiag(ar1Deere, gof = 15, omit.initial = FALSE)
+
+Box.test(residuals(ar1Deere), type = "Ljung-Box")
+```
+
+The Ljung-Box test supports the AR(1) specification.
+
+```{r}
+runs(residuals(ar1Deere))
+```
+
+The runs test supports the AR(1) specification.
+
+```{r}
+qqnorm(residuals(ar1Deere))
+qqline(residuals(ar1Deere))
+
+shapiro.test(residuals(ar1Deere))
+```
+
+The normal Q-Q plot and the shapiro-wilk test support the AR(1) specification.
+The outliers to the left are a bit concerning, but otherwise the residuals are normal.
+
+#5 8.11
+
+##8.11 (a)
+
+```{r}
+library(TSA)
+data("oil.price")
+oilPriceYt <- oil.price
+ar1OilPrice <- arima(diff(log(oilPriceYt)), order = c(1, 0, 0), method = 'ML')
+ar1OilPrice
+
+ar4OilPrice <- arima(diff(log(oilPriceYt)), order = c(4, 0, 0), method = 'ML')
+ar4OilPrice
+
+ts.plot(residuals(ar1OilPrice))
+acf(residuals(ar1OilPrice))
+
+ts.plot(residuals(ar4OilPrice))
+acf(residuals(ar4OilPrice))
+```
+
+The ACF plots seem to support both specifications, though AR(4) better than AR(1).
+
+```{r}
+tsdiag(ar1OilPrice, gof = 15, omit.initial = FALSE)
+
+tsdiag(ar4OilPrice, gof = 15, omit.initial = FALSE)
+```
+
+The Ljung-Box statistic barely supports the AR(1) specification but easily supports the AR(4) specification.
+
+```{r}
+runs(residuals(ar1OilPrice))
+
+runs(residuals(ar4OilPrice))
+```
+
+The runs test supports both the AR(1) specification and the AR(4) specification.
+
+```{r}
+qqnorm(residuals(ar1OilPrice))
+qqline(residuals(ar1OilPrice))
+
+shapiro.test(residuals(ar1OilPrice))
+
+
+qqnorm(residuals(ar4OilPrice))
+qqline(residuals(ar4OilPrice))
+
+shapiro.test(residuals(ar4OilPrice))
+```
+
+The residuals in both specifications are normal.
+
+#8.11 (b)
+
+```{r}
+ma1OilPrice <- arima(diff(log(oilPriceYt)), order = c(0, 0, 1), method = 'ML')
+ma1OilPrice
+
+ts.plot(residuals(ma1OilPrice))
+acf(residuals(ma1OilPrice))
+```
+
+The ACF seems to support the MA(1) specification.
+
+```{r}
+tsdiag(ma1OilPrice, gof = 15, omit.initial = FALSE)
+```
+
+The Ljung-Box test supports the MA(1) specification.
+
+```{r}
+runs(residuals(ma1OilPrice))
+```
+
+The runs test supports the MA(1) specification.
+
+```{r}
+qqnorm(residuals(ma1OilPrice))
+qqline(residuals(ma1OilPrice))
+
+shapiro.test(residuals(ma1OilPrice))
+```
+
+The residuals of the MA(1) specification are normal.
+
+##8.11 (c)
+
+AR(4) and MA(1) work about equally well explaining the data, so, therefore, I'd go with MA(1) because it's simpler than AR(4).

@@ -1,0 +1,85 @@
+---
+title: "STAT 417 Midterm"
+author: "Brendan Jones"
+date: "October 25, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown
+
+##1
+
+###1a)
+
+```{r}
+polyroot(c(1, 0.5, 0.2))
+```
+
+###1b)
+
+```{r}
+polyroot(c(1, 0.5))
+```
+
+##2
+
+###2a)
+
+```{r}
+library(TSA)
+data(rwalk)
+plot(rwalk, type = 'o', ylab='y', main = "Simulated Random Walk")
+theModel <- lm(rwalk~time(rwalk))
+abline(theModel)
+summary(theModel)
+```
+
+###2b)
+
+$$
+\frac{12 \gamma_0}{n(n^2-1)} 
+\left[ 1+2 \rho_1 (1-\frac{3}{n}) \right]
+$$
+
+
+```{r}
+n <- length(rwalk)
+Xhat <- (theModel$residuals)
+hat.gamma0 <- summary(theModel)$sigma^2
+acf.out <- acf(Xhat)   
+hat.rho1 <- acf.out[[1]][1]
+
+var.beta1.MA <- ((12*hat.gamma0) / (n*(n**2 - 1))) * (1+2*hat.rho1*(1 - 3/n))
+sqrt(var.beta1.MA)
+```
+
+##3)
+
+###3a)
+
+```{r}
+polyroot(c(1, -1.2, 0.7))
+```
+
+###3b)
+
+```{r}
+th.acf <- ARMAacf(ar=c(1.2, -0.7), lag.max=14)
+gamma0 <- 2/(1-(1.2*th.acf[2])-(-0.7*th.acf[3]))
+gamma0
+th.gamma <- gamma0 * th.acf
+th.gamma
+```
+
+##4)
+
+###4a)
+
+```{r}
+polyroot(c(1, 0.25, 0.5, 0.75))
+```
+

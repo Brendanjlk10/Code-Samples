@@ -1,0 +1,93 @@
+---
+title: "STAT 433 HW 4"
+author: "Brendan Jones"
+date: "September 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+#1) 10.6.3
+
+library(spuRs)
+
+#Fixed Point:
+fixedPointFtn <- function(x)
+{
+  return(cos(x))
+}
+
+system.time(fixedpoint(fixedPointFtn, 0))
+
+#Newton Raphson:
+newtonRaphsonFtn <- function(x)
+{
+  return(c(cos(x) - x, -sin(x) - 1))
+}
+
+system.time(newtonraphson(newtonRaphsonFtn, 0))
+```
+The newtonRaphson method was ~11x faster than the fixedpoint method
+
+
+```{r}
+#2) 10.6.6
+
+#Returns the y value of the function, needs to be updated for each function
+#To change function, switch which return is commented
+secantFtn <- function(x)
+{
+  #return(cos(x) - x)#cos(x) - x
+  return(log(x) - exp(-x))#log(x) - exp(-x)
+}
+
+#Given x0 and x1, determines the secant root
+secantMethodFtn <- function(x0, x1, tol = 1e-9, maxIter = 100)
+{
+  #Iteration 1
+  xNMinus1 <- x0
+  xN <- x1
+  currIter <- 1
+  
+  xNPlus1 <- xN - (secantFtn(xN) * (xN - xNMinus1) / (secantFtn(xN) - secantFtn(xNMinus1)))
+  cat("At iteration ", currIter, ", value of x is: ", xNPlus1, "\n")
+  
+  #All successive iterations
+  while (currIter < maxIter && abs(xNPlus1 - xN) > tol)
+  {
+    xNMinus1 <- xN
+    xN <- xNPlus1
+    currIter <- currIter + 1
+    
+    yXN <- secantFtn(xN)#F(Xn)
+    xNPlus1 <- xN - (yXN * (xN - xNMinus1) / (yXN - secantFtn(xNMinus1)))
+    cat("At iteration ", currIter, ", value of x is: ", xNPlus1, "\n")
+  }
+  
+  #Returns the root if the method converged, NULL if not
+  if (abs(xNPlus1 - xN) > tol)
+  {
+    cat("Algorithm failed to converge in ", maxIter, " iterations!\n")
+    return(NULL)
+  } else {
+    cat("Algorithm converged.\n")
+    return(xNPlus1)
+  }
+}
+
+system.time(secantMethodFtn(1, 2))
+```
+The secant method is much faster than the fixed-point method, but somewhat slower than the Newton-Raphson method
+
+3) 10.6.10
+
+Use a root-finding algorithm to find an x such that f(x) - (f(b) - f(a)) / (b - a) = 0
+For example, you can use the Newton-Raphson algorithm having Xn+1 = Xn - g(Xn) / g'(Xn)
+g(Xn) = f(x) - (f(b) - f(a)) / (b - a)
+g'(Xn) = f'(Xn) because (f(b) - f(a)) / (b - a) is a constant
+X0 is a number (a, b), such as (a + b) / 2
