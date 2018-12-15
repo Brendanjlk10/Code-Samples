@@ -1,0 +1,500 @@
+---
+title: "STAT417_Final_Exam_Jones_Brendan"
+author: "Brendan Jones"
+date: "December 4, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(TSA)
+```
+
+This is my work and I have not discussed this exam with anyone.
+
+#1
+```{r}
+input <- "C:/Users/Charles/OneDrive/Documents/STAT 417 Time Series Data Analysis/IBM.txt"
+temp_ibm <- read.table(input,header = F)
+ibm <- ts(temp_ibm, start = c(1980, 1), end = c(1992, 10), frequency = 260)
+```
+
+This series is a daily series (with some days taken off like weekends and holiday)
+
+##1(a)
+```{r}
+min(ibm)
+max(ibm)
+hist(ibm, breaks = (175 - 45) / 5, border = "blue", xlab = "IBM Stock Price", freq = FALSE, ylim = c(0, 0.025), main = "Histogram of IBM Stock Price 1980-1992")
+rug(x = seq(50, 170, 20), ticksize = -0.01, side = 1)
+rug(x = seq(0.0025, 0.0225, 0.005), ticksize = -0.01, side = 2)
+```
+
+The histogram shows that the distribution of ibm is bimodal, with one peak at around 60 and the other peak at around 120.
+
+```{r}
+ts.plot(ibm, ylim = c(50, 180), type = "l", ylab = "IBM Stock Price", xlab = "Year", main = "IBM Stock Price 1980-1992")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(50, 170, 20), ticksize = -0.01, side = 2)
+```
+
+The scatterplot explains this bimodality, as the stock price hung around 60 1980-1983. In around 1983, the price jumped up to about 120, where it more or less hung around through 1992 with a bump up to 160 in the middle.
+
+```{r}
+acf(ibm, lag.max = 260 * 12, plot = TRUE, na.action = na.pass, main = "ACFs of IBM Stock Price")
+rug(x = seq(1, 11, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-0.3, 0.9, 0.2), ticksize = -0.01, side = 2)
+```
+
+The ACF plot starts at 1 at lag = 0, steadily decreasing to lag = 2.83077 where the ACF = 0, staying significant positive basically the whole time. Then, the ACF stays significantly negative until about lag = 9 where it becomes insignificant. This hints that an AR(2) model may be appropriate.
+
+```{r}
+pacf(ibm, lag.max = 26, na.action = na.pass, main = "PACFs of IBM Stock Price")
+rug(x = seq(0.01, 0.09, .02), ticksize = -0.01, side = 1)
+```
+
+The pacf plot shows that the pacf lag 1 = 1, but the rest of the pacfs are insignificant. This hints that an AR(1) or MA(1) model may be appropriate.
+
+
+##1(c)
+```{r}
+decomposedIBM <- decompose(ibm)#The IBM series decomposed
+
+ibmRand <- ts(data = decomposedIBM$random[c(-(1:130),-(3001:3130))], frequency = 260, start = c(1980, 1 + 130), end = c(1991, 260 - 120))#The random component of the series
+ts.plot(ibmRand, type = "l", ylab = "IBM Stock Price Randomness Component", xlab = "Year", main = "Stock Price Randomness Component vs. Time", xlim = c(1980, 1992), ylim = c(-30, 30))
+abline(h = 0)
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 25, 10), ticksize = -0.01, side = 2)
+
+hist(ibmRand, breaks = (30 + 35) / 2.5, xlim = c(-30, 35), freq = FALSE, main = "Histogram of IBM Stock Price Randomness Component", xlab = "Random Component of IBM Stock Price")
+rug(x = seq(-25, 35, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.005, 0.045, 0.01), ticksize = -0.01, side = 2)
+
+qqnorm(ibmRand)
+qqline(ibmRand)
+shapiro.test(ibmRand)#The Shapiro-Wilk test of normality
+```
+
+As seen in its histogram, the random component of IBM stock price looks fairly normal, though it doesn't look straight on the normal Q-Q plot and fails the Shapiro-Wilk test of normality. Also, the scatter plot personally shows too many runs for the independence assumption to be made.
+
+```{r}
+ibmSeasonal <- decomposedIBM$seasonal#The seasonal component of the series
+ts.plot(ibmSeasonal, ylab = "IBM Stock Price Seasonal Component", xlab = "Year", main = "IBM Stock Price Seasonal Component over Time")
+abline(h = 0)
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-5, 3, 2), ticksize = -0.01, side = 2)
+
+hist(ibmSeasonal, freq = FALSE, breaks = (6.5 + 4.5) / 0.5, xlim = c(-8, 6), ylim = c(0, 0.35), xlab = "Seasonal Component of IBM Stock Price", main = "Histogram of Seasonal Component of IBM Stock Price")
+rug(x = seq(-7, 5, 2), ticksize = -0.01, side = 1)
+```
+
+As seen in its scatterplot, the seasonality of the IBM stock price follows an annual cyclical cycle.
+
+```{r}
+ibmTrend <- ts(data = decomposedIBM$trend[c(-(1:130),-(3001:3130))], frequency = 260, start = c(1980, 1 + 130), end = c(1991, 260 - 120))#The trend component of the series
+ts.plot(ibmTrend, xlim = c(1980, 1992), xlab = "Year", ylab = "IBM Stock Price Trend Component", main = "IBM Stock Price Trend Component over Time", ylim = c(50, 150))
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(50, 150, 20), ticksize = -0.01, side = 2)
+
+hist(ibmTrend, xlim = c(40, 160), freq = FALSE, xlab = "IBM Stock Price Trend Component", main = "Histogram of IBM Stock Price Trend Component", ylim = c(0, 0.05))
+rug(x = seq(50, 150, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.005, 0.035, 0.01), ticksize = -0.01, side = 2)
+```
+
+The IBM stock price trend component, as seen in its scatterplot, starts at around 60 but then increases to around 120 in 1984, and then increases to around 140 in 1986 & 1987, but then decreases to around 110 1988-1992.
+
+##1(d)
+
+```{r}
+ar1IBMModel <- arima(ibmRand, order = c(1, 1, 0))
+ar1IBMModel$coef
+ar1IBMModelResiduals <- ar1IBMModel$residuals
+
+ts.plot(ar1IBMModelResiduals, ylab = "AR(1) Model Residuals", main = "AR(1) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar1IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (18 + 18) / 0.5, ylim = c(0, 0.35), xlab = "AR(1) Residuals", main = "Histogram of AR(1) Residuals")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ma1IBMModel <- arima(ibmRand, order = c(0, 1, 1))
+ma1IBMModel$coef
+ma1IBMModelResiduals <- ma1IBMModel$residuals
+
+ts.plot(ma1IBMModelResiduals, ylab = "MA(1) Model Residuals", main = "MA(1) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ma1IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (18 + 18) / 0.5, ylim = c(0, 0.35), xlab = "MA(1) Residuals", main = "Histogram of MA(1) Residuals")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ar1Ma1IBMModel <- arima(ibmRand, order = c(1, 1, 1))
+ar1Ma1IBMModel$coef
+ar1Ma1IBMModelResiduals <- ar1Ma1IBMModel$residuals
+
+ts.plot(ar1Ma1IBMModelResiduals, ylab = "AR(1) MA(1) Model Residuals", main = "AR(1) MA(1) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar1Ma1IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (18 + 18) / 0.5, ylim = c(0, 0.35), xlab = "AR(1) MA(1) Residuals", main = "Histogram of AR(1) MA(1) Residuals")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ar2IBMModel <- arima(ibmRand, order = c(2, 1, 0))
+ar2IBMModel$coef
+ar2IBMModelResiduals <- ar2IBMModel$residuals
+
+ts.plot(ar2IBMModelResiduals, ylab = "AR(2) Model Residuals", main = "AR(2) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar2IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (18 + 18) / 0.5, ylim = c(0, 0.35), xlab = "AR(2) Residuals", main = "Histogram of AR(2) Residuals")
+rug(x = seq(-28, 9, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ma2IBMModel <- arima(ibmRand, order = c(0, 1, 2))
+ma2IBMModel$coef
+ma2IBMModelResiduals <- ma2IBMModel$residuals
+
+ts.plot(ma2IBMModelResiduals, ylab = "MA(2) Model Residuals", main = "MA(2) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ma2IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (30 + 10) / 0.5, ylim = c(0, 0.35), xlab = "MA(2) Residuals", main = "Histogram of MA(2) Residuals")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ar2ma2IBMModel <- arima(ibmRand, order = c(2, 1, 2))
+ar2ma2IBMModel$coef
+ar2ma2IBMModelResiduals <- ar2ma2IBMModel$residuals
+
+ts.plot(ar2ma2IBMModelResiduals, ylab = "AR(2) MA(2) Model Residuals", main = "AR(2) MA(2) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar2ma2IBMModelResiduals, freq = FALSE, xlim = c(-30, 10), breaks = (30 + 10) / 0.5, ylim = c(0, 0.35), xlab = "AR(2) MA(2) Residuals", main = "Histogram of AR(2) MA(2) Residuals")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+All of the models fit the data fairly well, so to avoid overfitting I'd chose AR(1) as the model. Though, there are some outliers in all of these models. Also, I probably would decompose the random component of the data before fitting a model.
+
+##1(e)
+```{r}
+ar2IBMModel$coef#As made in part (d)
+phi1 <- ar2IBMModel$coef[[1]]
+phi2 <- ar2IBMModel$coef[[2]]
+phi1
+phi2
+phi1 + phi2 < 1
+phi2 - phi1 < 1
+abs(phi2) < 1
+```
+
+All 3 conditions for causality/stationarity in an AR(2) model are satisfied, so therefore, the AR(2) model for the random component of the IBM stock price data is causal/stationary.
+
+AR(2) models are always invertible because they can be reexpressed as a general linear process through their $\psi$-coefficients.
+
+##1(f)
+```{r}
+#1 month = 260/12 ~ 22 days
+ar2Prediction <- predict(object = ar2IBMModel, n.ahead = 22)
+ar2Prediction
+
+ts.plot(ar2Prediction$pred, ylim = c(-9.09, -9.08), type = "o", ylab = "Random Component", main = "Random Component Prediction")
+rug(x = seq(1991.55, 1999.61, 0.02), ticksize = -0.01, side = 1)
+rug(x = seq(-9.089, -9.081, 0.002), ticksize = -0.01, side = 2)
+
+ts.plot(ibmRand, ar2Prediction$pred, xlim = c(1980, 1992), ylim = c(-30, 30), xlab = "Year", ylab = "Random Component", main = "Scatterplot of Random Component & 1 Month Prediction vs. Time")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 25, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+```
+
+#2
+```{r}
+ibmDiff <- diff(ibm)#The daily increase of the IBM stock price
+```
+
+##2(a)
+```{r}
+min(ibmDiff)
+max(ibmDiff)
+hist(ibmDiff, breaks = (35 + 15) / 0.5, border = "blue", xlab = "IBM Stock Price", freq = FALSE, ylim = c(0, 0.4), xlim = c(-35, 15), main = "Histogram of IBM Stock Price Increase 1980-1992")
+rug(x = seq(-28, 8, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.05, 0.35, 0.1), ticksize = -0.01, side = 2)
+```
+
+The histogram looks fairly normal, though definitely has outliers.
+
+```{r}
+ts.plot(ibmDiff, ylim = c(-30, 10), type = "l", ylab = "IBM Stock Price Inrease", xlab = "Year", main = "IBM Stock Price Increase 1980-1992")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-5, 5, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+```
+
+The TS shows that the daily changes are fairly randmly distributed around 0 all the time, with some occasional outliers.
+
+```{r}
+acf(ibmDiff, lag.max = 260 * 12, plot = TRUE, main = "ACFs of IBM Stock Price Increase")
+rug(x = seq(1, 11, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-0.05, 0.05, 0.02), ticksize = -0.01, side = 2)
+```
+
+The ACFs decrease over time though are never very big, which hints at AR(1) or MA(1) being a suitable model
+
+```{r}
+pacf(ibmDiff, lag.max = 65, main = "PACFs of IBM Stok Price Increase")
+rug(x = seq(0.025, 0.225, .05), ticksize = -0.01, side = 1)
+rug(x = seq(-0.05, 0.05, 0.02), ticksize = -0.01, side = 2)
+```
+The PACFs are all insignificant.
+
+##2(b)
+```{r}
+decomposedIBMDiff <- decompose(ibmDiff)#The decomposition of the Daiy Increase of IBM Stock Price
+
+ibmDiffRand <- ts(data = decomposedIBMDiff$random[c(-(1:130),-(3001:3130))], frequency = 260, start = c(1980, 1 + 130), end = c(1991, 260 - 120))
+ts.plot(ibmDiffRand, type = "l", ylab = "IBM Stock Price Increase Randomness Component", xlab = "Year", main = "Stock Price Increase Randomness Component vs. Time", xlim = c(1980, 1992), ylim = c(-30, 10))
+abline(h = 0)
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 2)
+
+hist(ibmDiffRand, breaks = (30 + 35) / 0.5, xlim = c(-30, 10), ylim = c(0, 0.35), freq = FALSE, main = "Histogram of IBM Stock Price Increase Randomness Component", xlab = "Random Component of IBM Stock Price Increase")
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+
+qqnorm(ibmDiffRand)
+qqline(ibmDiffRand)
+shapiro.test(ibmDiffRand)#The Shapiro-Wilk test of normality
+```
+
+As seen in its histogram, the random component of IBM stock price increase looks fairly normal, though it doesn't look straight on the normal Q-Q plot and fails the Shapiro-Wilk test of normality. Though, the scatter plot looks like white noise excluding a few outliers.
+
+```{r}
+ibmDiffSeasonal <- decomposedIBMDiff$seasonal#The seasonal component of IBMDiff
+ts.plot(ibmDiffSeasonal, ylim = c(-3, 2), ylab = "IBM Stock Price Seasonal Component", xlab = "Year", main = "IBM Stock Price Increase Seasonal Component over Time")
+abline(h = 0)
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-2.5, 1.5, 1), ticksize = -0.01, side = 2)
+
+hist(ibmDiffSeasonal, freq = FALSE, breaks = (3 + 2) / 0.1, xlim = c(-3, 2), ylim = c(0, 1), xlab = "Seasonal Component of IBM Stock Price", main = "Histogram of Seasonal Component of IBM Stock Price Increase")
+rug(x = seq(-2.5, 1.5, 1), ticksize = -0.01, side = 1)
+rug(x = seq(0.1, 0.9, 0.2), ticksize = -0.01, side = 2)
+```
+
+As seen in its scatterplot, the increase of the IBM stock price doesn't follow much of a seasonal component.
+
+```{r}
+ibmDiffTrend <- ts(data = decomposedIBMDiff$trend[c(-(1:130),-(3001:3130))], frequency = 260, start = c(1980, 1 + 130), end = c(1991, 260 - 120))
+ts.plot(ibmDiffTrend, xlim = c(1980, 1992), ylim = c(-0.25, 0.25), xlab = "Year", ylab = "IBM Stock Price Increase Trend Component", main = "IBM Stock Price Increase Trend Component over Time")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-0.25, 0.25, 0.1), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ibmDiffTrend, breaks = (0.3 + 0.3) / 0.02, freq = FALSE, xlab = "IBM Stock Price Increase Trend Component", main = "Histogram of IBM Stock Price Increase Trend Component", xlim = c(-0.3, 0.3))
+rug(x = seq(-0.25, 0.25, 0.1), ticksize = -0.01, side = 1)
+rug(x = seq(0.5, 6.5, 1), ticksize = -0.01, side = 2)
+```
+
+As can be seen here, the increase in IBM stock price does follow a trend, though that trend does hover around 0 and is small in magnitude relative to the other components. Therefore, by looking at the three compnents of the decomposition, it seems fair to treat the entire series as random and base the model of the entire series.
+
+##2(c)
+Based on ibmDiff, not ibmDiffRand.
+
+```{r}
+ar1IBMDiffModel <- arima(ibmDiff, order = c(1, 1, 0))
+ar1IBMDiffModel$coef
+ar1IBMDiffModelResiduals <- ar1IBMDiffModel$residuals
+
+ts.plot(ar1IBMDiffModelResiduals, ylab = "AR(1) Increase Model Residuals", main = "AR(1) Increase Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-25, 30), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 25, 5), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar1IBMDiffModelResiduals, freq = FALSE, xlim = c(-30, 30), breaks = (30 + 30) / 0.5, ylim = c(0, 0.3), xlab = "AR(1) Residuals", main = "Histogram of AR(1) Increase Residuals")
+rug(x = seq(-25, 25, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.275, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ma1IBMDiffModel <- arima(ibmDiff, order = c(0, 1, 1))
+ma1IBMDiffModel$coef
+ma1IBMDiffModelResiduals <- ma1IBMDiffModel$residuals
+
+ts.plot(ma1IBMDiffModelResiduals, ylab = "MA(1) Increase Model Residuals", main = "MA(1) Increase Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ma1IBMDiffModelResiduals, freq = FALSE, xlim = c(-35, 15), breaks = (35 + 15) / 0.5, ylim = c(0, 0.40), xlab = "MA(1) Increase Residuals", main = "Histogram of MA(1) Inrease Residuals")
+rug(x = seq(-35, 15, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.05, 0.35, 0.1), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ar1Ma1IBMDiffModel <- arima(ibmDiff, order = c(1, 1, 1))
+ar1Ma1IBMDiffModel$coef
+ar1Ma1IBMDiffModelResiduals <- ar1Ma1IBMDiffModel$residuals
+
+ts.plot(ar1Ma1IBMDiffModelResiduals, ylab = "AR(1) MA(1) Model Residuals", main = "AR(1) MA(1) Model Residuals over Time", xlim = c(1980, 1992), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar1Ma1IBMDiffModelResiduals, freq = FALSE, xlim = c(-35, 10), breaks = (35 + 10) / 0.5, ylim = c(0, 0.35), xlab = "AR(1) MA(1) Residuals", main = "Histogram of AR(1) MA(1) Residuals")
+rug(x = seq(-35, 15, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ar2IBMDiffModel <- arima(ibmDiff, order = c(2, 1, 0))
+ar2IBMDiffModel$coef
+ar2IBMDiffModelResiduals <- ar2IBMDiffModel$residuals
+
+ts.plot(ar2IBMDiffModelResiduals, ylab = "AR(2) Model Residuals", main = "AR(2) Model Residuals over Time", xlim = c(1980, 1992), ylim = c(-25, 25), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 25, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ar2IBMDiffModelResiduals, freq = FALSE, xlim = c(-30, 30), breaks = (30 + 30) / 0.5, ylim = c(0, 0.3), xlab = "AR(2) Residuals", main = "Histogram of AR(2) Residuals")
+rug(x = seq(-28, 28, 2), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.275, 0.05), ticksize = -0.01, side = 2)
+```
+
+```{r}
+ma2IBMDiffModel <- arima(ibmDiff, order = c(0, 1, 2))
+ma2IBMDiffModel$coef
+ma2IBMDiffModelResiduals <- ma2IBMDiffModel$residuals
+
+ts.plot(ma2IBMDiffModelResiduals, ylab = "MA(2) Increase Model Residuals", main = "MA(2) Increase Model Residuals over Time", xlim = c(1980, 1992), xlab = "Year")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+
+hist(ma2IBMDiffModelResiduals, freq = FALSE, breaks = (30 + 10) / 0.5, ylim = c(0, 0.35), xlab = "MA(2) Increase Residuals", main = "Histogram of MA(2) Inrease Residuals")
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 1)
+rug(x = seq(0.025, 0.325, 0.05), ticksize = -0.01, side = 2)
+```
+
+All the models fit fine, with a few outliers, so I'd choose a simple MA(1) to avoid overfitting.
+
+##2(d)
+```{r}
+ar2IBMDiffModel$coef#From part (c)
+phi1 <- ar2IBMDiffModel$coef[[1]]
+phi2 <- ar2IBMDiffModel$coef[[2]]
+phi1
+phi2
+phi1 + phi2 < 1
+phi2 - phi1 < 1
+abs(phi2) < 1
+```
+
+All 3 conditions for stationarity/causality in an AR(2) model are satisfied, so therefore, the AR(2) model for the random component of the IBM stock price increase is causal/stationary.
+
+AR(2) models are always invertible because they can be reexpressed as a general linear process through their $\psi$-coefficients.
+
+##2(e)
+```{r}
+#1 month = 260/12 ~ 22 days
+ar2DiffPrediction <- predict(object = ar2IBMDiffModel, n.ahead = 22)
+ar2DiffPrediction
+
+ts.plot(ar2DiffPrediction$pred, ylim = c(0.75, 1), type = "o")
+rug(x = seq(1992.05, 1992.11, 0.02), ticksize = -0.01, side = 1)
+rug(x = seq(0.775, 0.975, 0.05), ticksize = -0.01, side = 2)
+
+ts.plot(ibmDiff, ar2DiffPrediction$pred, xlim = c(1980, 1992), ylim = c(-30, 10), xlab = "Year", ylab = "Increase", main = "Scatterplot of Increase & 1 Month Prediction vs. Time")
+rug(x = seq(1981, 1991, 2), ticksize = -0.01, side = 1)
+rug(x = seq(-25, 5, 10), ticksize = -0.01, side = 2)
+abline(h = 0)
+```
+
+#3
+##3(a)
+$$
+X_t = 0.4X_{t-1} + 0.45X_{t-2} + w_t\implies\\
+X_t - 0.4X_{t-1} - 0.45X_{t-2} = w_t\implies\\
+X_t - 0.4BX_t - 0.45B^2X_t = w_t\implies\\
+(1 - 0.4B - 0.45B^2)X_t = w_t
+$$
+
+```{r}
+polyroot(c(1, -0.4, -0.45))
+abs(polyroot(c(1, -0.4, -0.45))[1])
+abs(polyroot(c(1, -0.4, -0.45))[2])
+```
+
+The equation is AR(2). Since both roots' absolute values are greater than 1, the equation is stationary.
+The equation is invertible because all AR equations are invertable because they can be reexpressed as a general linear process through their $\psi$-coefficients.
+
+##3(b)
+$$
+X_t = w_t + 0.7w_{t-1}\implies\\
+X_t = w_t + 0.7Bw_t\implies\\
+X_t = (1 + 0.7B)w_t
+$$
+
+```{r}
+polyroot(c(1, 0.7))
+abs(polyroot(c(1, 0.7))[1])
+```
+
+The equation is MA(1). Since the root's absolute value is greater than 1, the equation is invertible.
+The equation is stationary because all MA equations are stationary.
+
+##3(c)
+$$
+X_t + 1.6X_{t-1} + 0.64X_{t-2} = w_t - 0.85w_{t-1}\implies\\
+X_t + 1.6BX_t + 0.64B^2X_t = w_t - 0.85Bw_t\implies\\
+(1 + 1.6B + 0.64B^2)X_t = (1 - 0.85B)w_t
+$$
+
+```{r}
+polyroot(c(1, 1.6, 0.64))
+abs(polyroot(c(1, 1.6, 0.64))[1])
+abs(polyroot(c(1, 1.6, 0.64))[2])
+
+polyroot(c(1, -0.85))
+abs(polyroot(c(1, -0.85)))
+```
+
+The equation is ARMA(2, 1). Since the AR equation's roots' absolute values are greater than 1, the equation is stationary.
+Also, since the MA equation's root's absolute value is greater than 1, the equation is also invertible.
+
+#4
+```{r}
+tableNums <- c(0.62, "-", "-", "-", 0, "-",
+               -0.24, 0.62, "-", "-", 0, "-",
+               0.96, -0.24, 0.62, 0.4*-0.24 + 0.45*0.62, 0, -1.6*-0.24 - 0.64*0.62,
+               -1.44, 0.96, -0.24, 0.4*0.96 + 0.45*-0.24, 0, -1.6*0.96 - 0.64*-0.24,
+               "-", -1.44, 0.96, 0.4*-1.44 + 0.45*0.96, 0, -1.6*-1.44 - 0.64*0.96,
+               "-", "-", -1.44, 0.4*-0.144 + 0.45*-1.44, 0, -1.6*1.6896 - 0.64*-1.44,
+               "-", "-", "-", 0.4*-0.7056 + 0.45*-0.144, 0, -1.6*-1.78176 - 0.64*1.6896,
+               "-", "-", "-", 0.4*-0.34704 + 0.45*-0.7056, 0, -1.6*1.769472 - 0.64*-1.78176)
+tableMatrix <- matrix(data = tableNums, nrow = 8, ncol = 6, byrow = TRUE)
+colnames(tableMatrix) <- c("Data", "Lag 1", "Lag 2", "Fcast or Pred Model 3(a)", "Fcast or Pred Model 3(b)", "Fcast or Pred Model 3(c)")
+rownames(tableMatrix) <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8")
+forecastTable <- as.table(tableMatrix)
+forecastTable
+```
