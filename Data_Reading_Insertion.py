@@ -14,7 +14,6 @@ from sys import stdout
 import pymysql
 import time
 
-#db = mysql.connector.connect(host='127.0.0.1', user='Brendanjlk10', passwd='Bj&5426256277', db='Book_Fetch_Inc')#Create connection to the database
 #cur = db.cursor()#Create cursor to database
 
 ########################################
